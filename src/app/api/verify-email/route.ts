@@ -1,5 +1,5 @@
 const API_BASE_URL = (
-  process.env.APP_LOGGER_API_URL || "https://api.id-makers.com"
+  process.env.APP_LOGGER_API_URL || "https://api.app-logger.com"
 ).replace(/\/$/, "");
 
 export async function POST(request: Request) {

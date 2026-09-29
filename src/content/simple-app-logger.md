@@ -33,7 +33,7 @@ import 'package:simple_app_logger/simple_app_logger.dart';
 ## Backend requirements
 
 This package sends data to the App Logger API at
-`https://api.id-makers.com`. Before initializing the package, create a project
+`https://api.app-logger.com`. Before initializing the package, create a project
 API key in the App Logger dashboard.
 
 For access to every SDK feature, the bootstrap API key needs these scopes:
@@ -431,7 +431,7 @@ Confirm that:
 - The backend supports the current platform and application version.
 - Device initialization succeeds.
 - `POST /api/logs/batch` is deployed and its migration is applied.
-- The application can reach `https://api.id-makers.com`.
+- The application can reach `https://api.app-logger.com`.
 
 ### Installation registration returns `403`
 
