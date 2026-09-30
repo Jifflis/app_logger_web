@@ -39,6 +39,38 @@ function authorizationHeader() {
     : `ApiKey ${configuredApiKey}`;
 }
 
+function getBrowserDeviceName() {
+  const userAgent = navigator.userAgent;
+  const browser = /SamsungBrowser\//.test(userAgent)
+    ? "Samsung Internet"
+    : /Edg(?:A|iOS)?\//.test(userAgent)
+      ? "Edge"
+      : /OPR\//.test(userAgent)
+        ? "Opera"
+        : /Firefox\/|FxiOS\//.test(userAgent)
+          ? "Firefox"
+          : /Chrome\/|CriOS\//.test(userAgent)
+            ? "Chrome"
+            : /Safari\//.test(userAgent)
+              ? "Safari"
+              : "Web browser";
+  const operatingSystem = /Android/.test(userAgent)
+    ? "Android"
+    : /iPhone|iPad|iPod/.test(userAgent)
+      ? "iOS"
+      : /Windows NT/.test(userAgent)
+        ? "Windows"
+        : /CrOS/.test(userAgent)
+          ? "ChromeOS"
+          : /Macintosh|Mac OS X/.test(userAgent)
+            ? "macOS"
+            : /Linux/.test(userAgent)
+              ? "Linux"
+              : "Web";
+
+  return `${browser} on ${operatingSystem}`;
+}
+
 async function post(path: string, body: Record<string, unknown>) {
   const authorization = authorizationHeader();
   if (!apiBaseUrl || !authorization) return false;
@@ -73,7 +105,7 @@ async function initializeBrowser() {
     instance_id: instanceId,
     device_id: instanceId,
     actual_log_time: new Date().toISOString(),
-    name: (document.title || "App Logger website").slice(0, 100),
+    name: getBrowserDeviceName(),
     model: navigator.userAgent.slice(0, 512),
     platform: "web",
     app_version: "website",
