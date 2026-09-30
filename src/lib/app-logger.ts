@@ -73,11 +73,11 @@ async function initializeBrowser() {
     instance_id: instanceId,
     device_id: instanceId,
     actual_log_time: new Date().toISOString(),
-    name: document.title || "App Logger website",
-    model: navigator.userAgent,
+    name: (document.title || "App Logger website").slice(0, 100),
+    model: navigator.userAgent.slice(0, 512),
     platform: "web",
     app_version: "website",
-    language: navigator.language,
+    language: navigator.language.slice(0, 100),
   });
 }
 
