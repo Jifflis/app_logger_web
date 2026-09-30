@@ -1,0 +1,116 @@
+name: Validate and deploy App Logger Web
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-logger-web-production
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "22"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  validate:
+    name: Lint and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build production application
+        env:
+          APP_LOGGER_API_URL: https://api.app-logger.com
+          NEXT_PUBLIC_LOGGER_URL: https://api.app-logger.com
+          NEXT_PUBLIC_LOGGER_API_KEY: ci-build-placeholder
+        run: npm run build -- --webpack
+
+  deploy:
+    name: Deploy to production VPS
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://app-logger.com
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Update and restart application
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+
+          APP_DIR=/var/www/app_logger_web
+          ENV_FILE=/etc/app-logger-web.env
+          SERVICE_NAME=app-logger-web
+          APP_PORT=3001
+
+          test -d "$APP_DIR/.git"
+          test -r "$ENV_FILE"
+
+          cd "$APP_DIR"
+          git fetch origin main
+          git checkout main
+          git pull --ff-only origin main
+
+          set -a
+          source "$ENV_FILE"
+          set +a
+
+          npm ci
+          npm run build -- --webpack
+
+          sudo systemctl restart "$SERVICE_NAME"
+          sudo systemctl is-active --quiet "$SERVICE_NAME"
+
+          for attempt in {1..12}; do
+            if curl --fail --silent --show-error --max-time 5 \
+              "http://127.0.0.1:${APP_PORT}/" >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 12 ]; then
+              sudo journalctl -u "$SERVICE_NAME" -n 50 --no-pager
+              exit 1
+            fi
+            sleep 5
+          done
+
+          curl --fail --silent --show-error --location --retry 5 \
+            --retry-delay 3 https://app-logger.com/ >/dev/null
+          REMOTE
