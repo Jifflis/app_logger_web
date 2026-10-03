@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 
 type ResetState = "idle" | "submitting" | "success" | "error";
+const DASHBOARD_URL = "https://app.app-logger.com";
 
 export default function ResetPasswordForm({ token }: { token?: string }) {
   const [password, setPassword] = useState("");
@@ -49,6 +50,7 @@ export default function ResetPasswordForm({ token }: { token?: string }) {
       setConfirmation("");
       setState("success");
       setMessage(data.message || "Your password has been reset.");
+      window.location.replace(DASHBOARD_URL);
     } catch (error) {
       setState("error");
       setMessage(error instanceof Error ? error.message : "We could not reset your password.");
@@ -64,7 +66,7 @@ export default function ResetPasswordForm({ token }: { token?: string }) {
         <span className="verification-eyebrow">Password updated</span>
         <h1>Your password is reset</h1>
         <p>{message}</p>
-        <Link className="verification-button" href="/">
+        <Link className="verification-button" href={DASHBOARD_URL}>
           Continue to App Logger <span aria-hidden="true">→</span>
         </Link>
         <small>App Logger password reset <i /> Secure, single-use link</small>

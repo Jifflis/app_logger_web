@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type VerificationState = "loading" | "success" | "error" | "missing";
+const DASHBOARD_URL = "https://app.app-logger.com";
 
 export default function VerificationStatus({ token }: { token?: string }) {
   const [state, setState] = useState<VerificationState>(token ? "loading" : "missing");
@@ -33,6 +34,7 @@ export default function VerificationStatus({ token }: { token?: string }) {
 
       setState("success");
       setMessage(data.message || "Your email address has been verified.");
+      window.location.replace(DASHBOARD_URL);
     } catch (error) {
       setState("error");
       setMessage(error instanceof Error ? error.message : "We could not verify this email address.");
@@ -79,7 +81,7 @@ export default function VerificationStatus({ token }: { token?: string }) {
       <h1>{content.title}</h1>
       <p>{content.body}</p>
 
-      {state === "success" && <Link className="verification-button" href="/">Continue to App Logger <span aria-hidden="true">→</span></Link>}
+      {state === "success" && <Link className="verification-button" href={DASHBOARD_URL}>Continue to App Logger <span aria-hidden="true">→</span></Link>}
       {state === "error" && <button className="verification-button" type="button" onClick={verify}>Try again <span aria-hidden="true">↻</span></button>}
       {state === "missing" && <Link className="verification-button secondary" href="/support">Get support <span aria-hidden="true">→</span></Link>}
 
