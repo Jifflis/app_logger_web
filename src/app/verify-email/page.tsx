@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import VerificationStatus from "./verification-status";
+
+const DASHBOARD_VERIFICATION_URL =
+  "https://app.app-logger.com/verify-email";
 
 export const metadata: Metadata = {
   title: "Verify your email — App Logger",
@@ -16,6 +20,12 @@ export default async function VerifyEmailPage({
   const tokenParam = (await searchParams).token;
   const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
 
+  if (token) {
+    const destination = new URL(DASHBOARD_VERIFICATION_URL);
+    destination.searchParams.set("token", token);
+    redirect(destination.toString());
+  }
+
   return (
     <main className="verification-page">
       <header className="verification-header">
@@ -29,7 +39,7 @@ export default async function VerifyEmailPage({
       <section className="verification-main">
         <div className="verification-grid" aria-hidden="true" />
         <div className="verification-glow" aria-hidden="true" />
-        <VerificationStatus token={token} />
+        <VerificationStatus />
       </section>
 
       <footer className="verification-footer">
